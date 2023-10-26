@@ -1,0 +1,90 @@
+calculate_CI <- function(LE_table){
+  LE_table$'LE_control_CI_2.5' <- NA
+  LE_table$'LE_control_CI_97.5' <- NA
+  LE_table$'LE_exposure_1_CI_2.5' <- NA
+  LE_table$'LE_exposure_1_CI_97.5' <- NA
+  LE_table$'LE_exposure_2_CI_2.5' <- NA
+  LE_table$'LE_exposure_2_CI_97.5' <- NA
+
+  RR_1_sim <- matrix(NA, 1000, 15)
+  RR_2_sim <- matrix(NA, 1000, 15)
+  pre_control_sim <- matrix(NA, 1000, 15)
+  pre_exposure_1_sim <- matrix(NA, 1000, 15)
+  pre_exposure_2_sim <- matrix(NA, 1000, 15)
+  LE_control <- matrix(NA, 1000, 15)
+  LE_exposure_1 <- matrix(NA, 1000, 15)
+  LE_exposure_2 <- matrix(NA, 1000, 15)
+  for ( k in 1:1000 ){
+    for ( i in 1:15 ){
+      RR_1_sim[k,i] <- rnorm(1, mean=LE_table[i,'RR_1'], sd=LE_table[i,'RR_1_se'])
+      RR_2_sim[k,i] <- rnorm(1, mean=LE_table[i,'RR_2'], sd=LE_table[i,'RR_2_se'])
+      pre_control_sim[k,i] <- rbeta(1, shape1 = LE_table[i,'a_rbeta_control'],
+                                    shape2 = LE_table[i,'b_rbeta_control'])
+      pre_exposure_1_sim[k,i] <- rbeta(1, shape1 = LE_table[i,'a_rbeta_exposure_1'],
+                                       shape2 = LE_table[i,'b_rbeta_exposure_1'])
+      pre_exposure_2_sim[k,i] <- rbeta(1, shape1 = LE_table[i,'a_rbeta_exposure_2'],
+                                       shape2 = LE_table[i,'b_rbeta_exposure_2'])
+    }
+
+    # Calculate IR0, IR1, IR2 ...
+    IR_control <- LE_table$IR_age / (pre_control_sim[k,]+
+                                       pre_exposure_1_sim[k,] * RR_1_sim[k,] +
+                                       pre_exposure_2_sim[k,] * RR_2_sim[k,] )
+    IR_exposure_1 <- IR_control * RR_1_sim[k,]
+    IR_exposure_2 <- IR_control * RR_2_sim[k,]
+
+    # Calculate EX
+    ## EX0
+    qx_control <- 10 * IR_control / (2 + 5 * IR_control)
+    lx_control <- NA
+    tx_control <- NA
+    lx_control[1] <- 1
+    for(i in 1:14){
+      lx_control[i+1] <- lx_control[i] * (1 - qx_control[i])
+    }
+    dx_control <- lx_control * qx_control
+    LX_control <- lx_control - 0.5 * dx_control
+    for(i in 1:15){
+      tx_control[i] <- sum(LX_control[i:15])* 5
+    }
+    LE_control[k,] <- tx_control / lx_control
+
+    ## EX1
+    qx_exposure_1 <- 10 * IR_exposure_1 / (2 + 5 * IR_exposure_1)
+    lx_exposure_1 <- NA
+    tx_exposure_1 <- NA
+    lx_exposure_1[1] <- 1
+    for(i in 1:14){
+      lx_exposure_1[i+1] <- lx_exposure_1[i] * (1 - qx_exposure_1[i])
+    }
+    dx_exposure_1 <- lx_exposure_1 * qx_exposure_1
+    LX_exposure_1 <- lx_exposure_1 - 0.5 * dx_exposure_1
+    for(i in 1:15){
+      tx_exposure_1[i] <- sum(LX_exposure_1[i:15])* 5
+    }
+    LE_exposure_1[k,] <- tx_exposure_1 / lx_exposure_1
+
+    ## EX2
+    qx_exposure_2 <- 10 * IR_exposure_2 / (2 + 5 * IR_exposure_2)
+    lx_exposure_2 <- NA
+    tx_exposure_2 <- NA
+    lx_exposure_2[1] <- 1
+    for(i in 1:14){
+      lx_exposure_2[i+1] <- lx_exposure_2[i] * (1 - qx_exposure_2[i])
+    }
+    dx_exposure_2 <- lx_exposure_2 * qx_exposure_2
+    LX_exposure_2 <- lx_exposure_2 - 0.5 * dx_exposure_2
+    for(i in 1:15){
+      tx_exposure_2[i] <- sum(LX_exposure_2[i:15])* 5
+    }
+    LE_exposure_2[k,] <- tx_exposure_2 / lx_exposure_2
+  }
+  LE_table$LE_control_CI_2.5 <- apply(LE_control, 2 ,function(x) quantile(x, probs=c(2.5/100)))
+  LE_table$LE_control_CI_97.5 <- apply(LE_control, 2 ,function(x) quantile(x, probs=c(97.5/100)))
+  LE_table$LE_exposure_1_CI_2.5 <- apply(LE_exposure_1, 2 ,function(x) quantile(x, probs=c(2.5/100)))
+  LE_table$LE_exposure_1_CI_97.5 <- apply(LE_exposure_1, 2 ,function(x) quantile(x, probs=c(97.5/100)))
+  LE_table$LE_exposure_2_CI_2.5 <- apply(LE_exposure_2, 2 ,function(x) quantile(x, probs=c(2.5/100)))
+  LE_table$LE_exposure_2_CI_97.5 <- apply(LE_exposure_2, 2 ,function(x) quantile(x, probs=c(97.5/100)))
+  return(LE_table)
+}
+
