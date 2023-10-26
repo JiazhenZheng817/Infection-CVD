@@ -1,3 +1,921 @@
+####
+library(tidyverse)
+library(naniar)
+library(data.table)
+library(foreign)
+library(ggplot2)
+library(ggpubr)
+library(survminer)
+library(tableone)#
+library(survey)#
+library(reshape2)#
+library(lubridate)
+library(survival) 
+library(MatchIt)
+library(reportReg)
+library(reshape)
+library(dplyr)
+library(epiR)
+library(casebase)
+library(cmprsk)
+library(gmodels)
+library(rspiro)
+library("trend")
+library(rms) #RCS
+library(survminer)#
+library(ggplot2)
+library(ggsci) #
+library(lillies)
+library(nortest)
+library(rcompanion)
+library(readr)
+library(mice)
+library(matrixProfile)
+library(VIM)
+library(tidyverse)
+library(naniar)
+library(data.table)
+library(foreign)
+library(ggplot2)
+library(ggpubr)
+library(survminer)
+library(tableone)#
+library(survey)#
+library(reshape2)#
+library(lubridate)
+library(survival) 
+library(MatchIt)
+library(reportReg)
+
+library(survival)
+library(tableone)
+library(tcltk)
+library(cowplot)
+library(stringr)
+library(glue)
+library(ggplot2)
+library(eoffice)
+
+mainDir <- 'D:/pan_lab/programs/Life_Expectancy/'
+setwd(mainDir)
+
+# load("../infectious & CVD (operate).RData") # not in the zip file
+uk_labeled_$age_group_lb <- as.integer(uk_labeled_$age_ / 5) * 5 # lower bound
+uk_labeled_$status <- rep(1,nrow(uk_labeled_))
+uk_labeled_[uk_labeled_$death_cause!='','status'] <- 2 # status = 1 alive
+uk_labeled_$'group' <- 0 # control group
+uk_labeled_[uk_labeled_$a > 0 & uk_labeled_$a < 2,'group'] <- 1 # exposure group 1, low
+uk_labeled_[uk_labeled_$a > 1,'group'] <- 2 # exposure group 2, high
+# table(uk_labeled_$'group')
+uk_labeled_$'group'=as.factor(uk_labeled_$'group')
+
+# Process GBD data
+GBD_all <- read.csv('GBD_2019_DATA.csv',header = 1)
+GBD_all$min_age <- as.numeric(str_split_fixed(GBD_all$age_name,'-',2)[,1])
+GBD_all$max_age <- as.numeric(str_split_fixed(str_split_fixed(GBD_all$age_name,'-',2)[,2],' ',2)[,1])
+GBD_all <- GBD_all[!is.na(GBD_all$min_age), ]#remove all age
+GBD_all_death <- GBD_all[GBD_all$measure_name=='Deaths',]
+GBD_all_death$mx <- GBD_all_death$val/100000
+
+# Create bool variables for outcomes
+healthy_bool <- uk_labeled_$death_cause == ''
+CVD_death_bool <- grepl("I1[0-6]|I2[0-8]|I3[0-9]|I4[0-9]|I5[0-2]|I6[0-9]|I7[0-9]
+                        |I8[0-9]", uk_labeled_$death_cause)
+cancer_death_bool <- grepl("C0[0-9]|C1[0-9]|C2[0-6]|C3[0-9]|C4[0-1]|C4[3-9]|C4A|C5[0-8]|C6[0-9]|C7[0-9]|C8[0-9]|C7A|C7B|C9[0-6]|D0[0-9]", uk_labeled_$death_cause)
+respir_death_bool <- grepl("J3[0-9]|J4[0-7]|J6[0-9]|J70|J8[0-6]|J9[0-9]", uk_labeled_$death_cause)
+other_death_bool <- !(respir_death_bool|cancer_death_bool|CVD_death_bool|healthy_bool)
+
+# Create data for all cause death
+GBD_male_allcause <- GBD_all_death[GBD_all_death$sex_name=='Male'&
+                                  GBD_all_death$cause_name=='All causes'&
+                                  GBD_all_death$metric_name=='Rate'&
+                                  GBD_all_death$location_name=='Global',]
+GBD_male_allcause <- rbind(GBD_male_allcause,GBD_male_allcause[13,],GBD_male_allcause[13,])
+# The mortality rates of age 95~105  <-  age 90~94
+GBD_male_allcause[14:15,'min_age']=c(95,100)
+GBD_male_allcause[14:15,'max_age']=c(100,105)
+# GBD_male_allcause_model <- glm(formula = mx ~ min_age+I(min_age^2), data = GBD_male_allcause[1:13,],
+#    family = poisson)
+# GBD_male_allcause[14:15, 'mx'] <- predict(GBD_male_allcause_model, newdata <- GBD_male_allcause[14:15, ])
+
+
+GBD_female_allcause <- GBD_all_death[GBD_all_death$sex_name=='Female'&
+                                     GBD_all_death$cause_name=='All causes'&
+                                     GBD_all_death$metric_name=='Rate'&
+                                     GBD_all_death$location_name=='Global',]
+GBD_female_allcause <- rbind(GBD_female_allcause,GBD_female_allcause[13,],GBD_female_allcause[13,])
+GBD_female_allcause[14:15,'min_age']=c(95,100)
+GBD_female_allcause[14:15,'max_age']=c(100,105)
+# The mortality rates of age 95~105  <-  age 90~94
+
+
+# Create data for specific death cause: CVD
+GBD_male_CVD <- GBD_all_death[GBD_all_death$sex_name == 'Male' &
+                                GBD_all_death$cause_name == 'Cardiovascular diseases' &
+                                GBD_all_death$metric_name == 'Rate' &
+                                GBD_all_death$location_name == 'Global', ]
+GBD_male_CVD <- rbind(GBD_male_CVD,GBD_male_CVD[13,],GBD_male_CVD[13,])
+GBD_male_CVD[14:15,'min_age']=c(95,100)
+GBD_male_CVD[14:15,'max_age']=c(100,105)
+# The mortality rates of age 95~105  <-  age 90~94
+
+
+GBD_female_CVD <- GBD_all_death[GBD_all_death$sex_name == 'Female' &
+                                  GBD_all_death$cause_name == 'Cardiovascular diseases' &
+                                  GBD_all_death$metric_name == 'Rate' &
+                                  GBD_all_death$location_name == 'Global', ]
+GBD_female_CVD <- rbind(GBD_female_CVD,GBD_female_CVD[13,],GBD_female_CVD[13,])
+GBD_female_CVD[14:15,'min_age']=c(95,100)
+GBD_female_CVD[14:15,'max_age']=c(100,105)
+# The mortality rates of age 95~105  <-  age 90~94
+
+
+# Main function
+## death_bool = CVD / cancer / respir
+LE_table <- function(GBD_data, death_bool,sex){
+  # Create blank LE table
+  LE_table <- GBD_data[, c(2:5, 7:8,11:13)]
+  colnames(LE_table)[9] <- 'IR_age'
+  LE_table$pre_control <- NA # prevalence of control group
+  LE_table$pre_exposure_1 <- NA # prevalence of exposure group
+  LE_table$pre_exposure_2 <- NA # prevalence of exposure group
+  LE_table$IR_control <- NA # age-specific mortality rates for reference group
+  LE_table$IR_exposure_1 <- NA # age-specific mortality rates for exposure group 1
+  LE_table$IR_exposure_2 <- NA # age-specific mortality rates for exposure group 2
+  LE_table$pre_exposure_2 <- NA # prevalence of exposure group
+  LE_table$RR_1 <- NA # age-specific hazard ratio
+  LE_table$RR_2 <- NA # age-specific hazard ratio
+  LE_table$coef_1 <- NA
+  LE_table$coef_2 <- NA
+  LE_table$coef_se_1 <- NA
+  LE_table$coef_se_2 <- NA
+  LE_table$EX_control <- NA # life expectancy for reference group
+  LE_table$EX_exposure_1 <- NA # life expectancy for exposure group 1
+  LE_table$EX_exposure_2 <- NA # life expectancy for exposure group 2
+  LE_table$qx_control <- NA
+  LE_table$qx_exposure_1 <- NA
+  LE_table$qx_exposure_2 <- NA
+  LE_table$dx_control <- NA
+  LE_table$dx_exposure_1 <- NA
+  LE_table$dx_exposure_2 <- NA
+  LE_table$lx_control <- NA
+  LE_table$lx_exposure_1 <- NA
+  LE_table$lx_exposure_2 <- NA
+  LE_table$tx_control <- NA
+  LE_table$tx_exposure_1 <- NA
+  LE_table$tx_exposure_2 <- NA
+  LE_table$LX_control <- NA
+  LE_table$LX_exposure_1 <- NA
+  LE_table$LX_exposure_2 <- NA
+  LE_table$a_rbeta_control <- NA
+  LE_table$b_rbeta_control <- NA
+  LE_table$a_rbeta_exposure_1 <- NA
+  LE_table$b_rbeta_exposure_1 <- NA
+  LE_table$a_rbeta_exposure_2 <- NA
+  LE_table$b_rbeta_exposure_2 <- NA
+  LE_table$sample_size <-NA
+  # Set progress bar
+  u <- 1:15
+  pb <- tkProgressBar(title="进度",label="已完成 %", min=0, max=100, initial=0, width=500)
+  m <- 0
+
+  # For each age group
+  for(i in 1:15){
+    m <- m+1
+    info <- sprintf("已完成 %d%%", round(m *100/length(u)))
+    setTkProgressBar(pb, value=m*100/length(u), title=sprintf("进度 (%s)", info),label=info)
+    # Create dataset
+    uk_labeled_age <- uk_labeled_[healthy_bool|death_bool, ] # select samples for cox
+    uk_labeled_age <- uk_labeled_age[uk_labeled_age$age_ >= LE_table$min_age[i] &
+                                     uk_labeled_age$age_ < LE_table$max_age[i] &
+                                     uk_labeled_age$sex_ == sex, ] # all people in age group i
+    LE_table$sample_size[i] <- nrow(uk_labeled_age)
+    # Calculate prevalence
+    if(i <= 9){
+      LE_table[i, 'pre_control'] <- nrow(uk_labeled_age[uk_labeled_age$group == 0, ]) / nrow(uk_labeled_age)
+      LE_table[i, 'a_rbeta_control'] <- nrow(uk_labeled_age[uk_labeled_age$group == 0, ])
+      LE_table[i, 'b_rbeta_control'] <- nrow(uk_labeled_age[uk_labeled_age$group != 0, ])
+      LE_table[i, 'pre_exposure_1'] <- nrow(uk_labeled_age[uk_labeled_age$group == 1, ]) / nrow(uk_labeled_age)
+      LE_table[i, 'a_rbeta_exposure_1'] <- nrow(uk_labeled_age[uk_labeled_age$group == 1, ])
+      LE_table[i, 'b_rbeta_exposure_1'] <- nrow(uk_labeled_age[uk_labeled_age$group != 1, ])
+      LE_table[i, 'pre_exposure_2'] <- nrow(uk_labeled_age[uk_labeled_age$group == 2, ]) / nrow(uk_labeled_age)
+      LE_table[i, 'a_rbeta_exposure_2'] <- nrow(uk_labeled_age[uk_labeled_age$group == 2, ])
+      LE_table[i, 'b_rbeta_exposure_2'] <- nrow(uk_labeled_age[uk_labeled_age$group != 2, ])
+
+    }
+
+    # Calculate HR
+    if(i >= 3 & i <= 9){
+      res.cox <- coxph(Surv(death_survival_time, status) ~ group + bmi_ + ethnicity_ + household_income
+                         + education_ + physical_activity + alcohol_consumption_frequency
+                         + dm_patient + hypertension_prevalent
+                         + ldl_cholesterol_ + smoking_status
+                         ,data <- uk_labeled_age)
+      RR_1_age <- summary(res.cox)$conf.int[1, 1]
+      RR_2_age <- summary(res.cox)$conf.int[2, 1]
+      LE_table[i, 'RR_1'] <- RR_1_age
+      LE_table[i, 'RR_2'] <- RR_2_age
+      LE_table[i, 'coef_1'] <- summary(res.cox)$coefficients[1,1]
+      LE_table[i, 'coef_2'] <- summary(res.cox)$coefficients[2,1]
+      LE_table[i, 'coef_se_1'] <- summary(res.cox)$coefficients[1,3]
+      LE_table[i, 'coef_se_2'] <- summary(res.cox)$coefficients[2,3]
+    }
+  }
+  close(pb)
+
+  # Fill HR  ## 30~40岁的人数较少,值不稳定，就用了40~45岁组的HR代替
+  ## 70~74岁的也不稳定，就用65~69岁组的HR代替
+  LE_table[1:2, c('RR_1','coef_1','coef_se_1')] <- LE_table[3, c('RR_1','coef_1','coef_se_1')]
+  LE_table[9:15, c('RR_1','coef_1','coef_se_1')] <- LE_table[8,c('RR_1','coef_1','coef_se_1')]
+  LE_table[1:2, c('RR_2','coef_2','coef_se_2')] <- LE_table[3, c('RR_2','coef_2','coef_se_2')]
+  LE_table[9:15, c('RR_2','coef_2','coef_se_2')] <- LE_table[8,c('RR_2','coef_2','coef_se_2')]
+
+  # # poisson回归 结果不可
+  # glm1 <- glm(formula = RR_1 ~ min_age,
+  #             family  = poisson(link = "log"),
+  #             data    = LE_table[3:8,])
+  # glm2 <- glm(formula = RR_2 ~ min_age,
+  #             family  = poisson(link = "log"),
+  #             data    = LE_table[3:8,])
+  # LE_table[1:2, 'RR_1'] <- predict(glm1, newdata = LE_table[1:2,])
+  # LE_table[9:15, 'RR_1'] <- predict(glm1, newdata = LE_table[9:15,])
+  # LE_table[1:2, 'RR_2'] <- predict(glm2, newdata = LE_table[1:2,])
+  # LE_table[9:15, 'RR_2'] <- predict(glm2, newdata = LE_table[9:15,])
+
+
+  # Fill prevalences
+  LE_table[1:2, c('pre_control','a_rbeta_control','b_rbeta_control',
+                  'pre_exposure_1','a_rbeta_exposure_1','b_rbeta_exposure_1',
+                  'pre_exposure_2','a_rbeta_exposure_2','b_rbeta_exposure_2')] <-
+  LE_table[3, c('pre_control','a_rbeta_control','b_rbeta_control',
+                'pre_exposure_1','a_rbeta_exposure_1','b_rbeta_exposure_1',
+                'pre_exposure_2','a_rbeta_exposure_2','b_rbeta_exposure_2')]
+  LE_table[9:15, c('pre_control','a_rbeta_control','b_rbeta_control',
+                  'pre_exposure_1','a_rbeta_exposure_1','b_rbeta_exposure_1',
+                  'pre_exposure_2','a_rbeta_exposure_2','b_rbeta_exposure_2')] <-
+  LE_table[8, c('pre_control','a_rbeta_control','b_rbeta_control',
+                  'pre_exposure_1','a_rbeta_exposure_1','b_rbeta_exposure_1',
+                  'pre_exposure_2','a_rbeta_exposure_2','b_rbeta_exposure_2')]
+
+
+  # Calculate IR0, IR1, IR2 ...
+  LE_table$IR_control <- LE_table$IR_age / (LE_table$pre_control +
+                         LE_table$pre_exposure_1 * LE_table$RR_1 +
+                         LE_table$pre_exposure_2 * LE_table$RR_2 )
+  LE_table$IR_exposure_1 <- LE_table$IR_control * LE_table$RR_1
+  LE_table$IR_exposure_2 <- LE_table$IR_control * LE_table$RR_2
+
+  # Calculate EX
+  ## EX0
+  LE_table$qx_control <- 10*LE_table$IR_control / (2+5*LE_table$IR_control)
+  LE_table[1, 'lx_control'] <- 1
+  for(i in 1:14){
+    LE_table[i + 1, 'lx_control'] <- LE_table[i, 'lx_control'] * (1-LE_table[i, 'qx_control'])
+  }
+  LE_table$dx_control <- LE_table$lx_control * LE_table$qx_control
+  ## LX: population left in the middle of year i. decreasing linearly
+  LE_table$LX_control <- LE_table$lx_control - 0.5 * LE_table$dx_control
+  for(i in 1:15){
+    LE_table[i, 'tx_control'] <- sum(LE_table[i:15, 'LX_control'] * 5)
+  }
+  # Average life expectancy = total life expectancy ÷ expected number of people left
+  LE_table$EX_control <- LE_table$tx_control / LE_table$lx_control
+
+  ## EX1
+  LE_table$qx_exposure_1 <- 10* LE_table$IR_exposure_1 / (2 + 5 * LE_table$IR_exposure_1)
+  LE_table[1, 'lx_exposure_1'] <- 1
+  for(i in 1:14){
+    LE_table[i + 1, 'lx_exposure_1'] <- LE_table[i, 'lx_exposure_1'] * (1-LE_table[i, 'qx_exposure_1'])
+  }
+  LE_table$dx_exposure_1 <- LE_table$lx_exposure_1 * LE_table$qx_exposure_1
+  LE_table$LX_exposure_1 <- LE_table$lx_exposure_1 - 0.5 * LE_table$dx_exposure_1
+  for(i in 1:15){
+    LE_table[i, 'tx_exposure_1'] <- sum(LE_table[i:15, 'LX_exposure_1'] * 5)
+  }
+  LE_table$EX_exposure_1 <- LE_table$tx_exposure_1 / LE_table$lx_exposure_1
+
+  ## EX2
+  LE_table$qx_exposure_2 <- 10* LE_table$IR_exposure_2 / (2 + 5 * LE_table$IR_exposure_2)
+  LE_table[1, 'lx_exposure_2'] <- 1
+  for(i in 1:14){
+    LE_table[i + 1, 'lx_exposure_2'] <- LE_table[i, 'lx_exposure_2'] * (1-LE_table[i, 'qx_exposure_2'])
+  }
+  LE_table$dx_exposure_2 <- LE_table$lx_exposure_2 * LE_table$qx_exposure_2
+  LE_table$LX_exposure_2 <- LE_table$lx_exposure_2 - 0.5 * LE_table$dx_exposure_2
+  for(i in 1:15){
+    LE_table[i, 'tx_exposure_2'] <- sum(LE_table[i:15, 'LX_exposure_2'] * 5)
+  }
+  LE_table$EX_exposure_2 <- LE_table$tx_exposure_2 / LE_table$lx_exposure_2
+
+  # Calculate diff
+  LE_table$EX_diff_1 <- LE_table$EX_control - LE_table$EX_exposure_1
+  LE_table$EX_diff_2 <- LE_table$EX_control - LE_table$EX_exposure_2
+
+  LE_table[is.na(LE_table$EX_diff_1), 'EX_diff_1'] <- 0
+  LE_table[is.na(LE_table$EX_diff_2), 'EX_diff_2'] <- 0
+
+  return(LE_table)
+}
+
+# Create LE table for all groups
+allcause_male_LE <- LE_table(GBD_male_allcause,!healthy_bool,1)
+allcause_female_LE <- LE_table(GBD_female_allcause,!healthy_bool,0)
+CVD_male_LE <- LE_table(GBD_male_CVD,CVD_death_bool,1)
+CVD_female_LE <- LE_table(GBD_female_CVD,CVD_death_bool,0)
+
+allcause_male_LE <- calculate_CI(allcause_male_LE)
+allcause_female_LE <- calculate_CI(allcause_female_LE)
+CVD_male_LE <- calculate_CI(CVD_male_LE)
+CVD_female_LE <- calculate_CI(CVD_female_LE)
+
+subDir <- 'tables/'
+if (file.exists(subDir)){
+  setwd(file.path(mainDir, subDir))
+} else
+{
+  dir.create(file.path(mainDir, subDir))
+  setwd(file.path(mainDir, subDir))
+}
+write.csv(allcause_male_LE,'allcause_male_LE.csv',row.names = F)
+write.csv(allcause_female_LE,'allcause_female_LE.csv',row.names = F)
+write.csv(CVD_male_LE,'CVD_male_LE.csv',row.names = F)
+write.csv(CVD_female_LE,'CVD_female_LE.csv',row.names = F)
+
+df_50y_male_LE <- data.frame(round(t(allcause_male_LE[5,c('EX_control','EX_exposure_1','EX_exposure_2')]),digits = 2))
+colnames(df_50y_male_LE) <- c('LE')
+rownames(df_50y_male_LE) <- c(0,'1','≥2')
+df_50y_male_LE$infectious.diseases <- rownames(df_50y_male_LE)
+
+df_50y_female_LE <- data.frame(round(t(allcause_female_LE[5,c('EX_control','EX_exposure_1','EX_exposure_2')]),digits = 2))
+colnames(df_50y_female_LE) <- c('LE')
+rownames(df_50y_female_LE) <- c(0,'1','≥2')
+df_50y_female_LE$infectious.diseases <- rownames(df_50y_female_LE)
+
+
+df_allcause_male_1 <- data.frame(allcause_male_LE[,c('min_age','EX_diff_1')])
+colnames(df_allcause_male_1) <- c('age','LED')
+df_allcause_male_1$infectious.diseases <- rep('1',15)
+df_allcause_male_2 <- data.frame(allcause_male_LE[,c('min_age','EX_diff_2')])
+colnames(df_allcause_male_2) <- c('age','LED')
+df_allcause_male_2$infectious.diseases <- rep('≥2',15)
+df_allcause_male <- rbind(df_allcause_male_1,df_allcause_male_2)
+df_allcause_male <- df_allcause_male[df_allcause_male$age>45,]
+
+df_allcause_female_1 <- data.frame(allcause_female_LE[,c('min_age','EX_diff_1')])
+colnames(df_allcause_female_1) <- c('age','LED')
+df_allcause_female_1$infectious.diseases <- rep('1',15)
+df_allcause_female_2 <- data.frame(allcause_female_LE[,c('min_age','EX_diff_2')])
+colnames(df_allcause_female_2) <- c('age','LED')
+df_allcause_female_2$infectious.diseases <- rep('≥2',15)
+df_allcause_female <- rbind(df_allcause_female_1,df_allcause_female_2)
+df_allcause_female <- df_allcause_female[df_allcause_female$age>45,]
+
+df_CVD_male_1 <- data.frame(CVD_male_LE[,c('min_age','EX_diff_1')])
+colnames(df_CVD_male_1) <- c('age','LED')
+df_CVD_male_1$infectious.diseases <- rep('1',15)
+df_CVD_male_2 <- data.frame(CVD_male_LE[,c('min_age','EX_diff_2')])
+colnames(df_CVD_male_2) <- c('age','LED')
+df_CVD_male_2$infectious.diseases <- rep('≥2',15)
+df_CVD_male <- rbind(df_CVD_male_1,df_CVD_male_2)
+df_CVD_male <- df_CVD_male[df_CVD_male$age>45,]
+
+df_CVD_female_1 <- data.frame(CVD_female_LE[,c('min_age','EX_diff_1')])
+colnames(df_CVD_female_1) <- c('age','LED')
+df_CVD_female_1$infectious.diseases <- rep('1',15)
+df_CVD_female_2 <- data.frame(CVD_female_LE[,c('min_age','EX_diff_2')])
+colnames(df_CVD_female_2) <- c('age','LED')
+df_CVD_female_2$infectious.diseases <- rep('≥2',15)
+df_CVD_female <- rbind(df_CVD_female_1,df_CVD_female_2)
+df_CVD_female <- df_CVD_female[df_CVD_female$age>45,]
+
+# Figure
+setwd('../')
+df_50y_male_LE$infectious.diseases <- factor(df_50y_male_LE$infectious.diseases,levels=c("0","1",'≥2'))
+p_50y_male_LE <- ggplot(df_50y_male_LE,aes(x=infectious.diseases,y=LE))+
+  geom_bar(aes(x=infectious.diseases,y=LE,
+           fill=infectious.diseases),stat = 'identity',width = 0.3)+
+  scale_fill_manual(values=c(`0`='#086F3C',`1`="#93BEA7",`≥2`="#DAE9E1"))+
+  theme_bw()+theme(panel.grid=element_blank(), panel.border = element_blank(), legend.position ='none',
+                   axis.line=element_line()#,legend.key.size = unit(15, "pt"),legend.key.height = unit(15, "pt"),
+                   #legend.key.width = unit(15, "pt")
+                   ) +
+  geom_text(aes(x=infectious.diseases,y=LE,label=LE),vjust=-0.5,position = position_dodge(0.95))+
+  scale_y_continuous(limits = c(0,45),expand = c(0,0))+
+  labs(title ='Male', x = "Number of infectious diseases", y = "Life expectancy at\n age 50 (years)")
+
+df_50y_female_LE$infectious.diseases <- factor(df_50y_female_LE$infectious.diseases,levels=c("0","1",'≥2'))
+p_50y_female_LE <- ggplot(df_50y_female_LE)+geom_bar(aes(x=infectious.diseases,y=LE,
+                                  fill=infectious.diseases),stat = 'identity',width = 0.3)+
+  scale_fill_manual(values=c(`0`='#086F3C',`1`="#93BEA7",`≥2`="#DAE9E1"))+
+  theme_bw()+theme(panel.grid=element_blank(), panel.border = element_blank(), legend.position = 'none',
+                   axis.line=element_line()) +
+  scale_y_continuous(limits = c(0,45),expand = c(0,0))+
+  geom_text(aes(x=infectious.diseases,y=LE,label=LE),vjust=-0.5,position = position_dodge(0.95))+
+  labs(title ='Female', x = "Number of infectious diseases", y = element_blank())
+
+p_allcause_male_LED <- ggplot(df_allcause_male, aes(age, LED,group= infectious.diseases)) +
+  geom_line(aes(colour=infectious.diseases),linewidth =1.5) +
+  scale_colour_manual(values=c(`1`="#C8EFFE",`≥2`="#63A0FD"))+
+  theme_bw()+theme(panel.grid=element_blank(), panel.border = element_blank(), legend.position = c(0.8,0.85),
+                   axis.line=element_line()) +
+  scale_y_continuous(limits = c(0,25),expand = c(0,0))+scale_x_continuous(expand = c(0,0)) +
+  labs(title =element_blank(), x = "Age(years)", y = "Life-years lost from\nall cause death(years)")
+
+p_allcause_female_LED <- ggplot(df_allcause_female, aes(age, LED,fill = infectious.diseases)) +
+  geom_line(aes(colour=infectious.diseases),linewidth =1.5) +
+  scale_colour_manual(values=c(`1`="#C8EFFE",`≥2`="#63A0FD"))+
+  theme_bw()+theme(panel.grid=element_blank(), panel.border = element_blank(), legend.position ='none',
+                   axis.line=element_line()) +
+  scale_y_continuous(limits = c(0,25),expand = c(0,0))+scale_x_continuous(expand = c(0,0)) +
+  labs(title =element_blank(), x = "Age(years)", y = element_blank())
+
+p_CVD_male_LED <- ggplot(df_CVD_male, aes(age, LED, fill = infectious.diseases)) +
+  geom_line(aes(colour=infectious.diseases),linewidth =1.5) +
+  scale_colour_manual(values=c(`1`="#C8EFFE",`≥2`="#63A0FD"))+
+  theme_bw()+theme(panel.grid=element_blank(), panel.border = element_blank(), legend.position =c(0.8,0.85),
+                   axis.line=element_line()) +
+  scale_y_continuous(limits = c(0,15),expand = c(0,0))+scale_x_continuous(expand = c(0,0)) +
+  labs(title =element_blank(), x = "Age(years)", y = "Life-years lost from\nCVD death(years)")
+
+p_CVD_female_LED <- ggplot(df_CVD_female, aes(age, LED,fill = infectious.diseases)) +
+  geom_line(aes(colour=infectious.diseases),linewidth =1.5) +
+  scale_colour_manual(values=c(`1`="#C8EFFE",`≥2`="#63A0FD"))+
+  theme_bw()+theme(panel.grid=element_blank(), panel.border = element_blank(), legend.position = 'none',
+                   axis.line=element_line()) +
+  scale_y_continuous(limits = c(0,15),expand = c(0,0))+scale_x_continuous(expand = c(0,0)) +
+  labs(title =element_blank(), x = "Age(years)", y = element_blank())
+
+
+p=plot_grid(p_50y_male_LE, NULL,p_50y_female_LE,NULL,
+            p_allcause_male_LED, NULL,p_allcause_female_LED,NULL,
+            p_CVD_male_LED, NULL,p_CVD_female_LED,NULL,
+            align = 'v', ncol = 4, rel_widths = c(1,0.1,1,0.1),
+            rel_heights = c(0.8,1,1),labels=c('A','','','','B','','','','C','','',''))
+ggsave('infectious & CVD (LE).jpg',p,width =6, height = 7)
+topptx(p,'LE.pptx')
+
+
+###########################################################################################################################
+#################################################CVD events################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cvd==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_cvd==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cvd==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_cvd==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_cvd) ~ other_persistent_viral_infection + age_ + sex_ 
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_cvd) ~ other_persistent_viral_infection + age_ + sex_  +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################stroke ########################################################################
+###########################################################################################################################
+
+
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_stroke==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_stroke==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_stroke==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_stroke==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_stroke) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_stroke) ~ other_persistent_viral_infection + age_ + sex_  +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################TIA ########################################################################
+###########################################################################################################################
+
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_TIA==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_TIA==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_TIA==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_TIA==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_TIA) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_TIA) ~ other_persistent_viral_infection + age_ + sex_  +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################atrial_fibrillation########################################################################
+###########################################################################################################################
+
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_atrial_fibrillation==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_atrial_fibrillation==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_atrial_fibrillation==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_atrial_fibrillation==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_atrial_fibrillation) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_atrial_fibrillation) ~ other_persistent_viral_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################pericarditis########################################################################
+###########################################################################################################################
+
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_pericarditis==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_pericarditis==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_pericarditis==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_pericarditis==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_pericarditis) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_pericarditis) ~ other_persistent_viral_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################myocarditis########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_myocarditis==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_myocarditis==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_myocarditis==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_myocarditis==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_myocarditis) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_myocarditis) ~ other_persistent_viral_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################chd########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_chd==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_chd==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_chd==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_chd==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_chd) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_chd) ~ other_persistent_viral_infection + age_ + sex_+ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################acd########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_acd==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_acd==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_acd==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_acd==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_acd) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_acd) ~ other_persistent_viral_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################MI########################################################################
+###########################################################################################################################
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_MI==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_MI==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_MI==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_MI==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_MI) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_MI) ~ other_persistent_viral_infection + age_ + sex_  +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################cardiomyopathy########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cardiomyopathy==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_cardiomyopathy==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cardiomyopathy==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_cardiomyopathy==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_cardiomyopathy) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_cardiomyopathy) ~ other_persistent_viral_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################angina########################################################################
+###########################################################################################################################
+
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_angina==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_angina==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_angina==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_angina==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_angina) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_angina) ~ other_persistent_viral_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################HF########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_HF==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_HF==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_HF==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_HF==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_HF) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_HF) ~ other_persistent_viral_infection + age_ + sex_  +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################cardiac_arrest########################################################################
+###########################################################################################################################
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cardiac_arrest==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_cardiac_arrest==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cardiac_arrest==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_cardiac_arrest==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_cardiac_arrest) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_cardiac_arrest) ~ other_persistent_viral_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################cardiogenic_shock########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cardiogenic_shock==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_cardiogenic_shock==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cardiogenic_shock==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_cardiogenic_shock==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_cardiogenic_shock) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_cardiogenic_shock) ~ other_persistent_viral_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################arterial_embolism_thrombosis########################################################################
+###########################################################################################################################
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_arterial_embolism_thrombosis==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$incident_arterial_embolism_thrombosis==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_arterial_embolism_thrombosis==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$incident_arterial_embolism_thrombosis==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_arterial_embolism_thrombosis) ~ other_persistent_viral_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_arterial_embolism_thrombosis) ~ other_persistent_viral_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################cvd_death########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$cvd_death==2&uk_labeled_$other_persistent_viral_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+sum(uk_labeled_$cvd_death==2&uk_labeled_$other_persistent_viral_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$cvd_death==2&uk_labeled_$other_persistent_viral_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+sum(uk_labeled_$cvd_death==2&uk_labeled_$other_persistent_viral_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$other_persistent_viral_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, cvd_death) ~ other_persistent_viral_infection + age_ + sex_ 
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, cvd_death) ~ other_persistent_viral_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease   , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+
+
 calculate_CI <- function(LE_table){
   LE_table$'LE_control_CI_2.5' <- NA
   LE_table$'LE_control_CI_97.5' <- NA
