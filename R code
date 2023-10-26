@@ -914,7 +914,466 @@ fit <- coxph(Surv(time, cvd_death) ~ other_persistent_viral_infection + age_ + s
 # Summarize the results
 summary(fit)
 
+###########################################################################################################################
+#################################################CVD events################################################################
+###########################################################################################################################
 
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cvd==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_cvd==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cvd==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_cvd==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_cvd) ~ bacterial_infection + age_ + sex_ 
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_cvd) ~ bacterial_infection + age_ + sex_  +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################stroke ########################################################################
+###########################################################################################################################
+
+
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_stroke==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_stroke==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_stroke==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_stroke==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_stroke) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_stroke) ~ bacterial_infection + age_ + sex_  +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################TIA ########################################################################
+###########################################################################################################################
+
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_TIA==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_TIA==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_TIA==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_TIA==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_TIA) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_TIA) ~ bacterial_infection + age_ + sex_  +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################atrial_fibrillation########################################################################
+###########################################################################################################################
+
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_atrial_fibrillation==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_atrial_fibrillation==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_atrial_fibrillation==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_atrial_fibrillation==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_atrial_fibrillation) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_atrial_fibrillation) ~ bacterial_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################pericarditis########################################################################
+###########################################################################################################################
+
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_pericarditis==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_pericarditis==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_pericarditis==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_pericarditis==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_pericarditis) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_pericarditis) ~ bacterial_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################myocarditis########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_myocarditis==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_myocarditis==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_myocarditis==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_myocarditis==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_myocarditis) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_myocarditis) ~ bacterial_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################chd########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_chd==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_chd==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_chd==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_chd==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_chd) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_chd) ~ bacterial_infection + age_ + sex_+ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################acd########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_acd==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_acd==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_acd==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_acd==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_acd) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_acd) ~ bacterial_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################MI########################################################################
+###########################################################################################################################
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_MI==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_MI==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_MI==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_MI==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_MI) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_MI) ~ bacterial_infection + age_ + sex_  +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################cardiomyopathy########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cardiomyopathy==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_cardiomyopathy==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cardiomyopathy==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_cardiomyopathy==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_cardiomyopathy) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_cardiomyopathy) ~ bacterial_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################angina########################################################################
+###########################################################################################################################
+
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_angina==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_angina==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_angina==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_angina==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_angina) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_angina) ~ bacterial_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################HF########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_HF==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_HF==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_HF==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_HF==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_HF) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_HF) ~ bacterial_infection + age_ + sex_  +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################cardiac_arrest########################################################################
+###########################################################################################################################
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cardiac_arrest==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_cardiac_arrest==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cardiac_arrest==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_cardiac_arrest==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_cardiac_arrest) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_cardiac_arrest) ~ bacterial_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################cardiogenic_shock########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cardiogenic_shock==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_cardiogenic_shock==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_cardiogenic_shock==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_cardiogenic_shock==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_cardiogenic_shock) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_cardiogenic_shock) ~ bacterial_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################arterial_embolism_thrombosis########################################################################
+###########################################################################################################################
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_arterial_embolism_thrombosis==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$incident_arterial_embolism_thrombosis==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$incident_arterial_embolism_thrombosis==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$incident_arterial_embolism_thrombosis==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, incident_arterial_embolism_thrombosis) ~ bacterial_infection + age_ + sex_ + ethnicity_
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, incident_arterial_embolism_thrombosis) ~ bacterial_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+###########################################################################################################################
+#################################################cvd_death########################################################################
+###########################################################################################################################
+
+#uninfected 总 No of events/1000 person-years
+sum(uk_labeled_$cvd_death==2&uk_labeled_$bacterial_infection==1)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+sum(uk_labeled_$cvd_death==2&uk_labeled_$bacterial_infection==1)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==1])/(365*1000))
+
+#infected 总 No of events/1000 person-years
+sum(uk_labeled_$cvd_death==2&uk_labeled_$bacterial_infection==2)
+(sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+sum(uk_labeled_$cvd_death==2&uk_labeled_$bacterial_infection==2)/
+  (sum(uk_labeled_$time[uk_labeled_$bacterial_infection==2])/(365*1000))
+
+
+##总cox
+# Fit the Cox regression model1
+fit <- coxph(Surv(time, cvd_death) ~ bacterial_infection + age_ + sex_ 
+             , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+# Fit the Cox regression model3
+fit <- coxph(Surv(time, cvd_death) ~ bacterial_infection + age_ + sex_ +ethnicity+TDI+  education+ income+BMI+ smoking status+ alcohol+ physical_activity+vitamin_supplementation +hypertension+diabetes+high_cholesterol+liver disease+kidney disease+digestive_disease   , data = uk_labeled_)
+# Summarize the results
+summary(fit)
+
+#the same code is used for other infection types
 
 calculate_CI <- function(LE_table){
   LE_table$'LE_control_CI_2.5' <- NA
